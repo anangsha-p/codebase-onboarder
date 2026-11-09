@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import chromadb
 from dotenv import load_dotenv
 from google import genai
@@ -7,16 +8,18 @@ from sentence_transformers import SentenceTransformer
 
 load_dotenv()
 MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
-TOP_K = 6
+TOP_K = 10
 
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 llm = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
 
 def retrieve(collection_name, question, k=TOP_K):
     col = chromadb.PersistentClient(path="chroma_db").get_collection(collection_name)
     q = embedder.encode([question]).tolist()
     res = col.query(query_embeddings=q, n_results=k)
     return list(zip(res["documents"][0], res["metadatas"][0]))
+
 
 def build_prompt(question, chunks):
     context = ""
@@ -32,11 +35,24 @@ CODE:
 QUESTION: {question}
 """
 
+
 def answer(collection_name, question):
     chunks = retrieve(collection_name, question)
     prompt = build_prompt(question, chunks)
-    r = llm.models.generate_content(model=MODEL, contents=prompt)
-    return r.text, chunks
+    for attempt in range(5):
+        try:
+            r = llm.models.generate_content(model=MODEL, contents=prompt)
+            return r.text, chunks
+        except Exception as e:
+            msg = str(e)
+            retryable = any(x in msg for x in ("503", "429", "10053", "10054", "timed out", "ReadError", "ConnectError"))
+            if retryable and attempt < 4:
+                wait = 5 * (attempt + 1)
+                print(f"Connection or server problem, retrying in {wait}s...")
+                time.sleep(wait)
+            else:
+                raise
+
 
 if __name__ == "__main__":
     text, chunks = answer(sys.argv[1], sys.argv[2])
