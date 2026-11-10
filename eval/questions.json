@@ -1,0 +1,12 @@
+[
+  {"question": "Where is the development server started?", "file": "flask/app.py"},
+  {"question": "How does url_for build URLs?", "file": "flask/app.py"},
+  {"question": "How are HTTP exceptions handled?", "file": "flask/app.py"},
+  {"question": "How is the Jinja template environment created?", "file": "flask/app.py"},
+  {"question": "How does make_response convert a return value?", "file": "flask/app.py"},
+  {"question": "How is a request dispatched to a view function?", "file": "flask/app.py"},
+  {"question": "How does send_file work?", "file": "flask/helpers.py"},
+  {"question": "How does redirect work?", "file": "flask/helpers.py"},
+  {"question": "How does flash store messages?", "file": "flask/helpers.py"},
+  {"question": "How does the flask run command load the app?", "file": "flask/cli.py"}
+]
